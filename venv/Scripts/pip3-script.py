@@ -1,4 +1,4 @@
-#!"C:\Users\lmnor\Documents\School\5. Fall 2019\EE_461L\Python\venv\Scripts\python.exe"
+#!"C:\Users\lmnor\Documents\School\5. Fall 2019\EE_461L\MunchApp\scraperbot\venv\Scripts\python.exe"
 # EASY-INSTALL-ENTRY-SCRIPT: 'pip==19.0.3','console_scripts','pip3'
 __requires__ = 'pip==19.0.3'
 import re
