@@ -1,5 +1,6 @@
 import requests
 import json
+import sys
 from secrets import returnYelpApi
 
 from yelp.client import Client
@@ -19,17 +20,29 @@ def generateCategories(categoriesList):
         returnArray.append(c['title'])
     return returnArray
 
-def putAllInDb(input):
+def putAllInDb(input, postlink):
     businessList = input['businesses']
     listlen = len(businessList)
     for b in businessList:
-        Name = b['name']
-        id = b['id']
 
-        #todo: join the array together with a newline
-        address = b['location']['display_address']
-        Address = address[0] + '\n' + address[1]
-        PhoneNumber = b['phone']
+        notCredible = False
+
+        if 'name' in b:
+            Name = b['name']
+
+        if 'id' in b:
+            id = b['id']
+
+        Address = "No address listed..."
+        if 'location' in b:
+            address = b['location']['display_address']
+            if len(address) >= 2:
+                Address = address[0] + '\n' + address[1]
+            else:
+                notCredible = True
+
+        if 'phone' in b:
+            PhoneNumber = b['phone']
 
         baseURL = 'https://api.yelp.com/v3/businesses/'
         urlSearchByID = 'https://api.yelp.com/v3/businesses/' + id
@@ -37,23 +50,64 @@ def putAllInDb(input):
         req = requests.get(urlSearchByID, headers=headers)
         businessJSON = req.json()
         #fieldlist = businessJSON['search']
-        jprint(req.json())
+        #jprint(req.json())
 
-        #calculating hours
-        sundayStart = businessJSON['hours'][0]['open'][6]['start']
-        sundayEnd = businessJSON['hours'][0]['open'][6]['end']
-        mondayStart = businessJSON['hours'][0]['open'][0]['start']
-        mondayEnd = businessJSON['hours'][0]['open'][0]['end']
-        tuesdayStart = businessJSON['hours'][0]['open'][1]['start']
-        tuesdayEnd = businessJSON['hours'][0]['open'][1]['end']
-        wednesdayStart = businessJSON['hours'][0]['open'][2]['start']
-        wednesdayEnd = businessJSON['hours'][0]['open'][2]['end']
-        thursdayStart = businessJSON['hours'][0]['open'][3]['start']
-        thursdayEnd = businessJSON['hours'][0]['open'][3]['end']
-        fridayStart = businessJSON['hours'][0]['open'][4]['start']
-        fridayEnd = businessJSON['hours'][0]['open'][4]['end']
-        saturdayStart = businessJSON['hours'][0]['open'][5]['start']
-        saturdayEnd = businessJSON['hours'][0]['open'][5]['end']
+        mondayStart = "99:99"
+        mondayEnd = "99:99"
+        tuesdayStart = "99:99"
+        tuesdayEnd = "99:99"
+        wednesdayStart = "99:99"
+        wednesdayEnd = "99:99"
+
+        thursdayStart = "99:99"
+        thursdayEnd = "99:99"
+        fridayStart = "99:99"
+        fridayEnd = "99:99"
+        saturdayStart = "99:99"
+        saturdayEnd = "99:99"
+        sundayStart = "99:99"
+        sundayEnd = "99:99"
+
+        i = 0
+        if 'hours' in businessJSON:
+            for day in businessJSON['hours'][0]['open']:
+                dayIndex = day['day']
+                if dayIndex == 0:
+                    mondayStart = businessJSON['hours'][0]['open'][i]['start']
+                    mondayStart = mondayStart[:2] + ":" + mondayStart[2:]
+                    mondayEnd = businessJSON['hours'][0]['open'][i]['end']
+                    mondayEnd = mondayEnd[:2] + ":" + mondayEnd[2:]
+                if dayIndex == 1:
+                    tuesdayStart = businessJSON['hours'][0]['open'][i]['start']
+                    tuesdayStart = tuesdayStart[:2] + ":" + tuesdayStart[2:]
+                    tuesdayEnd = businessJSON['hours'][0]['open'][i]['end']
+                    tuesdayEnd = tuesdayEnd[:2] + ":" + tuesdayEnd[2:]
+                if dayIndex == 2:
+                    wednesdayStart = businessJSON['hours'][0]['open'][i]['start']
+                    wednesdayStart = wednesdayStart[:2] + ":" + wednesdayStart[2:]
+                    wednesdayEnd = businessJSON['hours'][0]['open'][i]['end']
+                    wednesdayEnd = wednesdayEnd[:2] + ":" + wednesdayEnd[2:]
+                if dayIndex == 3:
+                    thursdayStart = businessJSON['hours'][0]['open'][i]['start']
+                    thursdayStart = thursdayStart[:2] + ":" + thursdayStart[2:]
+                    thursdayEnd = businessJSON['hours'][0]['open'][i]['end']
+                    thursdayEnd = thursdayEnd[:2] + ":" + thursdayEnd[2:]
+                if dayIndex == 4:
+                    fridayStart = businessJSON['hours'][0]['open'][i]['start']
+                    fridayStart = fridayStart[:2] + ":" + fridayStart[2:]
+                    fridayEnd = businessJSON['hours'][0]['open'][i]['end']
+                    fridayEnd = fridayEnd[:2] + ":" + fridayEnd[2:]
+                if dayIndex == 5:
+                    saturdayStart = businessJSON['hours'][0]['open'][i]['start']
+                    saturdayStart = saturdayStart[:2] + ":" + saturdayStart[2:]
+                    saturdayEnd = businessJSON['hours'][0]['open'][i]['end']
+                    saturdayEnd = saturdayEnd[:2] + ":" + saturdayEnd[2:]
+                if dayIndex == 6:
+                    sundayStart = businessJSON['hours'][0]['open'][i]['start']
+                    sundayStart = sundayStart[:2] + ":" + sundayStart[2:]
+                    sundayEnd = businessJSON['hours'][0]['open'][i]['end']
+                    sundayEnd = sundayEnd[:2] + ":" + sundayEnd[2:]
+                i += 1
 
         Hours = [[sundayStart, sundayEnd],
                  [mondayStart, mondayEnd],
@@ -63,41 +117,52 @@ def putAllInDb(input):
                  [fridayStart, fridayEnd],
                  [saturdayStart, saturdayEnd]]
 
-        Photos = businessJSON['photos']
+        if 'photos' in businessJSON:
+            Photos = businessJSON['photos']
+
         Tags = generateCategories(businessJSON['categories'])
         Description = "this is an example description..."
         Location = [businessJSON['coordinates']['latitude'], businessJSON['coordinates']['longitude']]
         Website = businessJSON['url']
 
         returnDictionary = {
-            "Name": Name,
-            "Address":Address,
-            "Location":Location,
-            "Hours":Hours,
-            "Photos":Photos,
-            "Website":Website,
-            "PhoneNumber":PhoneNumber,
-            "Description":Description,
-            "Tags":Tags
+            "name": Name,
+            "address":Address,
+            "location":Location,
+            "hours":Hours,
+            "photos":Photos,
+            "website":Website,
+            "phoneNumber":PhoneNumber,
+            "description":Description,
+            "tags":Tags
         }
 
-        dictJSON = json.dumps(returnDictionary)
+        useragentheader = {'User-agent': 'MunchCritic/1.0'}
 
-        print()
+        if not notCredible:
+            r = requests.post(postlink, headers=useragentheader, json=returnDictionary)
+            print("Adding " + Name + " to the database...")
+            if r.status_code == 200:
+                print("Adding successful!")
+            else:
+                print("Could not add " + Name + " to the database.")
 
-
-def main():
+def getYelpData(inputLink):
     url = 'https://api.yelp.com/v3/businesses/search'
 
     # In the dictionary, term can take values like food, cafes or businesses like McDonalds
     params = {'term': 'food truck', 'location': 'Austin'}
     req = requests.get(url, params=params, headers=headers)
     print('The status code is {}'.format(req.status_code))
-    jprint(req.json())
+    #jprint(req.json())
     yelpBusinesses = req.json()
 
     #name, address, hours, photos (array of URL), website, phone, desc, tags
-    putAllInDb(yelpBusinesses)
+    putAllInDb(yelpBusinesses, inputLink)
 
 if __name__ == '__main__':
-    main()
+    print("Running script: " + sys.argv[0] + "...")
+    if len(sys.argv) > 1:
+        getYelpData(sys.argv[1])
+    else:
+        getYelpData('http://localhost/foodtrucks')
