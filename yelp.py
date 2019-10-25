@@ -14,5 +14,9 @@ def main():
     jprint(response.json())
     print(response.status_code)
 
+    result = json.loads(response)
+
+    print(result)
+
 if __name__ == '__main__':
     main()
