@@ -160,9 +160,45 @@ def getYelpData(inputLink):
     #name, address, hours, photos (array of URL), website, phone, desc, tags
     putAllInDb(yelpBusinesses, inputLink)
 
+# if __name__ == '__main__':
+#     print("Running script: " + sys.argv[0] + "...")
+#     if len(sys.argv) > 1:
+#         getYelpData(sys.argv[1])
+# #         http://munch-server.herokuapp.com/foodtrucks
+#     else:
+#         getYelpData('http://localhost/foodtrucks')
+
+
 if __name__ == '__main__':
-    print("Running script: " + sys.argv[0] + "...")
-    if len(sys.argv) > 1:
-        getYelpData(sys.argv[1])
-    else:
-        getYelpData('http://localhost/foodtrucks')
+    print("Starting scraperbot... \nPlease enter a number to get started: \n   1. Update Yelp\n   2. Update Google\n   3. Add food truck by name\n")
+    command = input("")
+
+    if command in ["1"]:
+        print("You chose: Update Yelp")
+    if command in ["2"]:
+        print("You chose: Update Google")
+    if command in ["3"]:
+        print("You chose: Add food truck by name...")
+
+    print("\nGotcha. Do you want to update the localhost or the herokuapp databases?\n   1. localhost\n   2. heroku\n")
+    server = input("")
+
+    if server in ["1"]:
+        print("Running on localhost...")
+
+        if command in ["1"]:
+            getYelpData('http://localhost/foodtrucks')
+        if command in ["2"]:
+            print("You chose: Update Google")
+        if command in ["3"]:
+            print("You chose: Add food truck by name...")
+
+    elif server in ["2"]:
+        print("Running on heroku...")
+
+        if command in ["1"]:
+            getYelpData('http://munch-server.herokuapp.com/foodtrucks')
+        if command in ["2"]:
+            print("You chose: Update Google")
+        if command in ["3"]:
+            print("You chose: Add food truck by name...")
