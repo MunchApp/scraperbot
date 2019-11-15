@@ -22,6 +22,7 @@ def generateCategories(categoriesList):
 def putOneInDb(b, postlink):
     notCredible = False
     useragentheader = {'User-agent': 'MunchCritic/1.0'}
+    reviewURL = postlink[:-10] + "reviews"
 
     if 'name' in b:
         Name = b['name']
@@ -41,6 +42,7 @@ def putOneInDb(b, postlink):
             Address = address[0] + '\n' + address[1]
         else:
             notCredible = True
+            print("ERROR: Did not add " + " to the database...")
 
     foodtruckexistsparams = {'name': Name}
     r = requests.get(postlink, foodtruckexistsparams)
@@ -149,14 +151,14 @@ def putOneInDb(b, postlink):
     }
 
     if not notCredible:
-        r = requests.post(postlink, headers=useragentheader, json=returnDictionary)
-        if r.status_code == 200:
+        rfoodtruck = requests.post(postlink, headers=useragentheader, json=returnDictionary)
+        if rfoodtruck.status_code == 200:
             print("Adding successful!")
 
             req = requests.get(urlSearchReviews, headers=headers)
             reviewsJSON = req.json()
             for review in reviewsJSON['reviews']:
-                returnJSON = r.json()
+                returnJSON = rfoodtruck.json()
                 Name = review['user']['name']
                 Comment = review['text']
                 Rating = review['rating']
@@ -172,7 +174,6 @@ def putOneInDb(b, postlink):
                     'date': Date,
                     'origin': Origin
                 }
-                reviewURL = postlink[:-10] + "reviews"
                 r = requests.post(reviewURL, headers=useragentheader, json=newReview)
                 if r.status_code == 200:
                     print("Review from " + Name + " added.")
