@@ -1,14 +1,11 @@
 import requests
 import json
-import sys
 from secrets import returnYelpApi
+from secrets import returnPlacesApi
 
-from yelp.client import Client
-
-import get_info
-
-api_key = returnYelpApi()
-headers = {'Authorization': 'Bearer %s' % api_key}
+yelp_key = returnYelpApi()
+headers = {'Authorization': 'Bearer %s' % yelp_key}
+places_key = returnPlacesApi()
 
 def jprint(obj):
     text = json.dumps(obj, sort_keys=True, indent=4)
@@ -180,6 +177,56 @@ def getYelpData(inputLink):
     yelpBusinesses = req.json()
     putAllInDb(yelpBusinesses, inputLink)
 
+def parse_google_business(business, postlink):
+    notCredible = False
+    useragentheader = {'User-agent': 'MunchCritic/1.0'}
+
+    Name = "ERROR: No name!"
+    if 'name' in business:
+        Name = business['name']
+
+    print("Adding " + Name + " to the database...")
+
+    id = "null"
+    if 'id' in business:
+        id = business['id']
+
+    Address = "No address listed..."
+    if 'formatted_address' in business:
+        unformattedAddress = business['formatted_address'].split(',')
+        if len(unformattedAddress) >= 2:
+            Address = unformattedAddress[0] + '\n' + unformattedAddress[1] + ', ' + unformattedAddress[2]
+
+    foodtruckexistsparams = {'name': Name}
+    r = requests.get(postlink, foodtruckexistsparams)
+    response = r.json()
+
+    if len(response) > 0:
+        for conflict in response:
+            conAddress = conflict['address']
+            if conAddress == Address:
+                print("ERROR: Food truck already exists in database.")
+                return
+
+    
+
+
+
+
+def put_all_gmap_in_db(input, postlink):
+    for business in input['results']:
+        parse_google_business(business, postlink)
+
+def getPlacesData(inputLink):
+    url = 'https://maps.googleapis.com/maps/api/place/textsearch/json'
+    # //30.2672 -97.7431
+    params = {'key': places_key, 'input': 'food trucks', 'inputtype': 'textquery', 'locationbias': 'point:30.267200,-97.743100'}
+    req = requests.get(url, params=params, headers=headers)
+    print('The status code is {}'.format(req.status_code))
+    places_businesses = req.json()
+    put_all_gmap_in_db(places_businesses, inputLink)
+
+
 def printBusinesses(input):
     businessList = input['businesses']
     i = 1
@@ -243,7 +290,7 @@ if __name__ == '__main__':
         if command in ["1"]:
             getYelpData('http://localhost/foodtrucks')
         if command in ["2"]:
-            print("You chose: Update Google")
+            getPlacesData('http://localhost/foodtrucks')
         if command in ["3"]:
             print()
             print("What is the name of the truck you want to add?\n")
