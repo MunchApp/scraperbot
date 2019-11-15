@@ -22,9 +22,15 @@ def generateCategories(categoriesList):
 
 def putOneInDb(b, postlink):
     notCredible = False
+    useragentheader = {'User-agent': 'MunchCritic/1.0'}
 
     if 'name' in b:
         Name = b['name']
+    else:
+        print("ERROR: No name for the food truck. Most likely API failure.")
+        return
+
+    print("Adding " + Name + " to the database...")
 
     if 'id' in b:
         id = b['id']
@@ -37,6 +43,18 @@ def putOneInDb(b, postlink):
         else:
             notCredible = True
 
+    foodtruckexistsparams = {'name': Name}
+    r = requests.get(postlink, foodtruckexistsparams)
+    response = r.json()
+
+    if len(response) > 0:
+        for conflict in response:
+            conAddress = conflict['address']
+            if conAddress == Address:
+                print("ERROR: Food truck already exists in database.")
+                return
+
+
     if 'phone' in b:
         PhoneNumber = b['phone']
 
@@ -45,8 +63,6 @@ def putOneInDb(b, postlink):
 
     req = requests.get(urlSearchByID, headers=headers)
     businessJSON = req.json()
-    # fieldlist = businessJSON['search']
-    # jprint(req.json())
 
     mondayStart = "99:99"
     mondayEnd = "99:99"
@@ -133,11 +149,8 @@ def putOneInDb(b, postlink):
         "tags": Tags
     }
 
-    useragentheader = {'User-agent': 'MunchCritic/1.0'}
-
     if not notCredible:
         r = requests.post(postlink, headers=useragentheader, json=returnDictionary)
-        print("Adding " + Name + " to the database...")
         if r.status_code == 200:
             print("Adding successful!")
         else:
