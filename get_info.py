@@ -58,7 +58,7 @@ def putOneInDb(b, postlink):
 
     baseURL = 'https://api.yelp.com/v3/businesses/'
     urlSearchByID = 'https://api.yelp.com/v3/businesses/' + id
-    urlSearchReviews = 'https://api.yelp.com/v3/businesses/' + id + 
+    urlSearchReviews = 'https://api.yelp.com/v3/businesses/' + id + '/reviews'
 
     req = requests.get(urlSearchByID, headers=headers)
     businessJSON = req.json()
@@ -152,6 +152,31 @@ def putOneInDb(b, postlink):
         r = requests.post(postlink, headers=useragentheader, json=returnDictionary)
         if r.status_code == 200:
             print("Adding successful!")
+
+            req = requests.get(urlSearchReviews, headers=headers)
+            reviewsJSON = req.json()
+            for review in reviewsJSON['reviews']:
+                returnJSON = r.json()
+                Name = review['user']['name']
+                Comment = review['text']
+                Rating = review['rating']
+                Date = review['time_created']
+                DateSplit = Date.split(' ')
+                Date = DateSplit[0] + "T" + DateSplit[1] + "Z"
+                Origin = 'Yelp'
+                newReview = {
+                    'reviewerName': Name,
+                    'foodTruck': returnJSON['id'],
+                    'comment': Comment,
+                    'rating': Rating,
+                    'date': Date,
+                    'origin': Origin
+                }
+                reviewURL = postlink[:-10] + "reviews"
+                r = requests.post(reviewURL, headers=useragentheader, json=newReview)
+                if r.status_code == 200:
+                    print("Review from " + Name + " added.")
+
         else:
             print("Could not add " + Name + " to the database.")
 
