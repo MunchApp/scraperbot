@@ -2,6 +2,8 @@ import requests
 import json
 from secrets import returnYelpApi
 from secrets import returnPlacesApi
+import pytz
+from datetime import datetime
 
 yelp_key = returnYelpApi()
 headers = {'Authorization': 'Bearer %s' % yelp_key}
@@ -51,12 +53,12 @@ def putOneInDb(b, postlink):
                 print("ERROR: Food truck already exists in database.")
                 return
 
-
     if 'phone' in b:
         PhoneNumber = b['phone']
 
     baseURL = 'https://api.yelp.com/v3/businesses/'
     urlSearchByID = 'https://api.yelp.com/v3/businesses/' + id
+    urlSearchReviews = 'https://api.yelp.com/v3/businesses/' + id + 
 
     req = requests.get(urlSearchByID, headers=headers)
     businessJSON = req.json()
@@ -177,6 +179,7 @@ def getYelpData(inputLink):
     yelpBusinesses = req.json()
     putAllInDb(yelpBusinesses, inputLink)
 
+
 def parse_google_business(business, postlink):
     notCredible = False
     useragentheader = {'User-agent': 'MunchCritic/1.0'}
@@ -189,7 +192,7 @@ def parse_google_business(business, postlink):
 
     id = "null"
     if 'id' in business:
-        id = business['id']
+        id = business['place_id']
 
     Address = "No address listed..."
     if 'formatted_address' in business:
@@ -208,7 +211,195 @@ def parse_google_business(business, postlink):
                 print("ERROR: Food truck already exists in database.")
                 return
 
-    
+    phoneurl = 'https://maps.googleapis.com/maps/api/place/details/json'
+    params = {'key': places_key, 'place_id': id}
+
+    req = requests.get(phoneurl, params=params)
+    #print('The status code is {}'.format(req.status_code))
+    business_info = req.json()
+
+    #todo: verify
+    PhoneNumber = ''
+    if 'formatted_phone_number' in business_info['result']:
+        PhoneNumber = business_info['result']['formatted_phone_number']
+
+    mondayStart = "99:99"
+    mondayEnd = "99:99"
+    tuesdayStart = "99:99"
+    tuesdayEnd = "99:99"
+    wednesdayStart = "99:99"
+    wednesdayEnd = "99:99"
+
+    thursdayStart = "99:99"
+    thursdayEnd = "99:99"
+    fridayStart = "99:99"
+    fridayEnd = "99:99"
+    saturdayStart = "99:99"
+    saturdayEnd = "99:99"
+    sundayStart = "99:99"
+    sundayEnd = "99:99"
+
+    if 'opening_hours' in business_info['result']:
+        if 'weekday_text' in business_info['result']['opening_hours']:
+            dayIndex = 0
+            for hourresult in business_info['result']['opening_hours']['weekday_text']:
+                splitHours = hourresult.split(" ")
+                if len(splitHours) > 2:
+                    tempstart = '99:99'
+                    tempend = '99:99'
+                    if splitHours[2] == 'PM':
+                        startArray = splitHours[1].split(':')
+                        tempstart = str(int(startArray[0]) + 12) + ":" + startArray[1]
+                    elif splitHours[2] == '–':
+                        tempstart = '99:99'
+                        tempend = '99:99'
+                        if dayIndex == 0:
+                            mondayStart = tempstart
+                            mondayEnd = tempend
+                        if dayIndex == 1:
+                            tuesdayStart = tempstart
+                            tuesdayEnd = tempend
+                        if dayIndex == 2:
+                            wednesdayStart = tempstart
+                            wednesdayEnd = tempend
+                        if dayIndex == 3:
+                            thursdayStart = tempstart
+                            thursdayEnd = tempend
+                        if dayIndex == 4:
+                            fridayStart = tempstart
+                            fridayEnd = tempend
+                        if dayIndex == 5:
+                            saturdayStart = tempstart
+                            saturdayEnd = tempend
+                        if dayIndex == 6:
+                            sundayStart = tempstart
+                            sundayEnd = tempend
+                        continue
+                    else:
+                        if splitHours[1] == '12:00':
+                            tempstart = '00:00'
+                        else:
+                            tempstart = splitHours[1]
+                            splitTempEnd = tempstart.split(':')
+                            if int(splitTempEnd[0]) < 10:
+                                tempstart = '0' + tempstart
+                    if splitHours[5] == 'PM':
+                        endArray = splitHours[4].split(':')
+                        tempend = str(int(endArray[0]) + 12) + ":" + endArray[1]
+                    else:
+                        if splitHours[4] == '12:00':
+                            tempend = '00:00'
+                        else:
+                            tempend = splitHours[4]
+                            splitTempEnd = tempend.split(':')
+                            if int(splitTempEnd[0]) < 10:
+                                tempend = '0' + tempend
+
+
+                    if dayIndex == 0:
+                        mondayStart = tempstart
+                        mondayEnd = tempend
+                    if dayIndex == 1:
+                        tuesdayStart = tempstart
+                        tuesdayEnd = tempend
+                    if dayIndex == 2:
+                        wednesdayStart = tempstart
+                        wednesdayEnd = tempend
+                    if dayIndex == 3:
+                        thursdayStart = tempstart
+                        thursdayEnd = tempend
+                    if dayIndex == 4:
+                        fridayStart = tempstart
+                        fridayEnd = tempend
+                    if dayIndex == 5:
+                        saturdayStart = tempstart
+                        saturdayEnd = tempend
+                    if dayIndex == 6:
+                        sundayStart = tempstart
+                        sundayEnd = tempend
+                else:
+                    tempstart = '99:99'
+                    tempend = '99:99'
+                    if dayIndex == 0:
+                        mondayStart = tempstart
+                        mondayEnd = tempend
+                    if dayIndex == 1:
+                        tuesdayStart = tempstart
+                        tuesdayEnd = tempend
+                    if dayIndex == 2:
+                        wednesdayStart = tempstart
+                        wednesdayEnd = tempend
+                    if dayIndex == 3:
+                        thursdayStart = tempstart
+                        thursdayEnd = tempend
+                    if dayIndex == 4:
+                        fridayStart = tempstart
+                        fridayEnd = tempend
+                    if dayIndex == 5:
+                        saturdayStart = tempstart
+                        saturdayEnd = tempend
+                    if dayIndex == 6:
+                        sundayStart = tempstart
+                        sundayEnd = tempend
+                dayIndex += 1
+
+    Hours = [[sundayStart, sundayEnd],
+             [mondayStart, mondayEnd],
+             [tuesdayStart, tuesdayEnd],
+             [wednesdayStart, wednesdayEnd],
+             [thursdayStart, thursdayEnd],
+             [fridayStart, fridayEnd],
+             [saturdayStart, saturdayEnd]]
+
+    Photos = ["https://www.ccms.edu/wp-content/uploads/2018/07/Photo-Not-Available-Image.jpg"]
+
+    Tags = business_info['result']['types']
+    Description = ""
+    Location = [business_info['result']['geometry']['location']['lat'],business_info['result']['geometry']['location']['lng']]
+    Website = ''
+
+    returnDictionary = {
+        "name": Name,
+        "address": Address,
+        "location": Location,
+        "hours": Hours,
+        "photos": Photos,
+        "website": Website,
+        "phoneNumber": PhoneNumber,
+        "description": Description,
+        "tags": Tags
+    }
+
+    if not notCredible:
+        r = requests.post(postlink, headers=useragentheader, json=returnDictionary)
+        if r.status_code == 200:
+            print("Adding successful!")
+
+            for review in business_info['result']['reviews']:
+                Name = review['author_name']
+                Comment = review['text']
+                Rating = review['rating']
+                Date = review['time']
+                tz = pytz.timezone('America/Los_Angeles')
+                Date = datetime.fromtimestamp(Date, tz).isoformat()
+                Origin = 'Google'
+                newReview = {
+                    'reviewerName': Name,
+                    'foodTruck': id,
+                    'comment': Comment,
+                    'rating': Rating,
+                    'date': Date,
+                    'origin': Origin
+                }
+                reviewURL = postlink[:-10] + "reviews"
+                r = requests.post(reviewURL, headers=useragentheader, json=newReview)
+                if r.status_code == 200:
+                    print("Review from " + Name + " added.")
+
+
+        else:
+            print("Could not add " + Name + " to the database.")
+
 
 
 
